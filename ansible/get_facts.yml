@@ -1,0 +1,7 @@
+---
+- hosts: mariadb
+  tasks:
+    - name: Getting Facts
+      setup:
+      ignore_errors: yes
+...

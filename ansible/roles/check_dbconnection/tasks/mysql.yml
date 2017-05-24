@@ -1,0 +1,41 @@
+---
+#- name: Check slave replication status.
+#  mysql_replication:
+#    mode: getslave
+#    login_user: "{{ mysql.user }}"
+#    login_password: "{{ mysql.password }}"
+#  ignore_errors: true
+#  register: slave
+
+- name: Check master replication status.
+  become: True
+  mysql_replication: mode=getmaster
+    config_file="{{ mysql.config_file }}"
+  delegate_to: "{{groups['mariadb_master'][0]}}"
+  register: master
+#    login_password="{{ mysql.password }}"
+#    login_user="{{ mysql.user }}"
+
+#- name: Ensure replication user exists on master.
+#  mysql_user:
+#    name: "{{ mysql_replication_user.name }}"
+#    host: "{{ mysql_replication_user.host | default('%') }}"
+#    password: "{{ mysql_replication_user.password }}"
+#    priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+#    state: present
+#  when: >
+#    (mysql_replication_role == 'master')
+#    and mysql_replication_user
+#    and (mysql_replication_master != '')
+
+- name: Creating replication user
+  become: yes
+  mysql_user: >
+        name={{ mysql.replication_user }}
+        password={{ mysql.password }}
+        priv="*.*:REPLICATION SLAVE"
+        host='%'
+        state=present
+
+- name: Check connection to db
+...

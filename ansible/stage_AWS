@@ -1,0 +1,34 @@
+[geofence_php]
+geo_app_master_01 ansible_host=13.58.41.86
+geo_app_slave_01 ansible_host=13.58.134.98
+
+[mariadb_master]
+geo_master_01 ansible_host=13.58.41.86
+
+[mariadb_slave]
+geo_slave_01 ansible_host=13.58.134.98
+
+##################################
+##          Variables           ##
+##################################
+
+[region:vars]
+region_name=develop
+ansible_user=ec2-user
+ansible_ssh_user=ec2-user
+ansible_ssh_private_key_file= '~/.ssh/wt-t/AWS/stage/scalhive_devops'
+
+
+##################################
+##          childhood           ##
+##################################
+[region:children]
+db
+geofence_php
+
+     [db:children]
+     mariadb
+
+        [mariadb:children]
+        mariadb_master
+        mariadb_slave

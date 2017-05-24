@@ -1,0 +1,122 @@
+---
+- include: get facts.yml
+
+tasks:
+
+- name: Checking ssh connection to slave from backup-master (backup-master)
+  command: ssh -q user@downhost exit
+ssh -q -o "BatchMode=yes" -i /home/sicmapp/.ssh/id_rsa <ID>@<Servername>.<domain> "echo 2>&1" && echo $host SSH_OK || echo $host SSH_NOK
+local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
+  register: user1_enabled
+
+- debug
+  when: user1_enabled.stdout.find("success") != -1
+
+- name: Ensure replication user exists on master. (master)
+  mysql_user:
+    name: "{{ mysql_replication_user.name }}"
+    host: "{{ mysql_replication_user.host | default('%') }}"
+    password: "{{ mysql_replication_user.password }}"
+    priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+    state: present
+#  when: >
+#    (mysql_replication_role == 'master')
+#    and mysql_replication_user
+#    and (mysql_replication_master != '')
+  register: slave_on_master
+
+- name: Creating user slave on master (master)
+  when: slave_on_master. ==
+
+- name: Checking connection to db from backup-master
+   mysql_db:
+      login_user=root
+      login_password=password
+      login_host=B_address
+      login_port=B_port
+      name=B_database
+      state=present
+    when: dbstatus.rc == 0
+
+
+- name: Stoping slave (slave)
+  mysql_replication:
+    mode: stopslave
+
+- name: Geting master status (slave)
+ become: True
+  mysql_replication: mode=getmaster
+    config_file="{{ mysql.config_file }}"
+  delegate_to: "{{groups['mariadb_master'][0]}}"
+  register: master #need for bin-filename and position
+
+- name: Creating backup directory (slave)
+  become: True
+    file: >
+          path={{server_backup_storage}}
+          state=directory
+          owner={{ansible_user}}
+          group={{ansible_user}}
+          recurse=True
+
+
+- name: Creating file name
+   set_fact:
+      backup_name: '{{ansible_host}}_mysql_backup_{{ansible_date_time.year}}_{{ansible_date_time.month}}_{{ansible_date_time.day}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}_{{curr_tag}}.sql.gz'
+
+- name: Creating DB dump (slave)
+  shell: mysqldump -R -u {{mysql.user}} -p'{{mysql.password}}' {{mysql.database}}  | gzip -1 > {{server_backup_storage}}/{{backup_name}}
+
+  tar?
+
+- name: Starting replication on slave-prime (slave)
+   mysql_replication:
+      mode: startslave
+
+#- name: Check seconds behind master (for control) not prime
+
+- hosts: serverB
+  tasks:
+- name: Copy dump to backup-master (backup-master or slave)
+   - name: Copy Remote-To-Remote (from serverA to serverB)
+     synchronize: src=/copy/from_serverA dest=/copy/to_serverB
+     delegate_to: serverA
+
+- name: Restoring from dump (backup-master)
+- name: Restore data
+  become: True
+  shell: "mysql -u  {{mysql.database}} < {{server_backup_storage}}/{{backup_name}}"
+  when: "backup_name[-4:] == '.sql'"
+
+- name: Restore data
+  become: True
+  shell: "cat {{server_backup_storage}}/{{backup_name}} | gunzip | mysql {{mysql.database}}"
+  when: "backup_name[-3:] == '.gz'"
+
+- name: Selecting master (backup-master)
+- name: Configure replication on the slave.
+  become: yes
+  mysql_replication: >
+        mode=changemaster
+        master_host="{{item}}"
+        master_user="{{ mysql.replication_user }}"
+        master_password="{{ mysql.password}}"
+        master_log_file="{{ master.File }}"
+        master_log_pos="{{ master.Position}}"
+  with_items: "{{hostvars[groups['mariadb_master'][0]]['ansible_all_ipv4_addresses'][:2]}}"
+
+- name: Starting replication on backup-master (backup-master)
+  mysql_replication:
+        mode: startslave
+
+- name: Check slave replication status. (backup-master)
+  mysql_replication:
+    mode: getslave
+    login_user: "{{ mysql.user }}"
+    login_password: "{{ mysql.password }}"
+  ignore_errors: true
+  register: slave
+
+#- name: Checking second behind master (backup-master)
+
+...

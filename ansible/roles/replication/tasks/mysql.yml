@@ -1,0 +1,17 @@
+---
+- name: Configure replication on the slave.
+  become: yes
+  mysql_replication: >
+        mode=changemaster
+        master_host="{{item}}"
+        master_user="{{ mysql.replication_user }}"
+        master_password="{{ mysql.password}}"
+        master_log_file="{{ master.File }}"
+        master_log_pos="{{ master.Position}}"
+  with_items: "{{hostvars[groups['mariadb_master'][0]]['ansible_all_ipv4_addresses'][:2]}}"
+
+  - name: Start replication.
+    become: yes
+    mysql_replication:
+      mode: startslave
+...

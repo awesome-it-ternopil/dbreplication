@@ -1,0 +1,12 @@
+---
+
+-name: stop slave
+
+
+- name: Creating file name
+  set_fact:
+    backup_name: '{{ansible_host}}_mysql_backup_{{ansible_date_time.year}}_{{ansible_date_time.month}}_{{ansible_date_time.day}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}_{{curr_tag}}.sql.gz'
+
+- name: Creating backup
+  shell: mysqldump -R -u {{mysql.user}} -p'{{mysql.password}}' {{mysql.database}}  | gzip -1 > {{server_backup_storage}}/{{backup_name}}
+...
