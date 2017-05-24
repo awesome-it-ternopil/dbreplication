@@ -1,0 +1,16 @@
+*.zip
+*.sql
+*.tar.gz
+/.idea
+/project
+/target
+/ansible/.vagrant
+ds-geofence.iml
+logs/
+/ansible/*.retry
+/ansible/logs
+public
+ansible/logs
+/logs
+/front
+/modules
