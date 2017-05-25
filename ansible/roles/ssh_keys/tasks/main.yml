@@ -1,0 +1,13 @@
+---
+- name: Registering vars from file
+  include_vars: main.yml
+  no_log: True
+
+- name: Using pub method
+  include: add_pub.yml
+  when: "'pub' in keys_actions"
+
+- name: Using pem method
+  include: add_pem.yml
+  when: "'pem' in keys_actions"
+...

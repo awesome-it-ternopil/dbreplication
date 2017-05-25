@@ -1,0 +1,11 @@
+---
+- name: Coping pem key
+  become: True
+  copy: >
+          content={{backups.ssh_keys.backup_server_pem}}
+          group={{app.group}}
+          owner={{app.user}}
+          dest={{ssh_pem_file}}
+          mode=600
+  no_log: True
+...

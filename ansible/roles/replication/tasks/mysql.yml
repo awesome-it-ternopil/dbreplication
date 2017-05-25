@@ -1,4 +1,16 @@
 ---
+- name: Restoring from dump (backup-master)
+- name: Restore data
+  become: True
+  shell: "mysql -u  {{mysql.database}} < {{server_backup_storage}}/{{backup_name}}"
+  when: "backup_name[-4:] == '.sql'"
+
+- name: Restore data
+  become: True
+  shell: "cat {{server_backup_storage}}/{{backup_name}} | gunzip | mysql {{mysql.database}}"
+  when: "backup_name[-3:] == '.gz'"
+
+- name: Selecting master (backup-master)
 - name: Configure replication on the slave.
   become: yes
   mysql_replication: >
@@ -10,8 +22,17 @@
         master_log_pos="{{ master.Position}}"
   with_items: "{{hostvars[groups['mariadb_master'][0]]['ansible_all_ipv4_addresses'][:2]}}"
 
-  - name: Start replication.
-    become: yes
-    mysql_replication:
-      mode: startslave
+- name: Starting replication on backup-master (backup-master)
+  mysql_replication:
+        mode: startslave
+
+- name: Check slave replication status. (backup-master)
+  mysql_replication:
+    mode: getslave
+    login_user: "{{ mysql.user }}"
+    login_password: "{{ mysql.password }}"
+  ignore_errors: true
+  register: slave
+
+#- name: Checking second behind master (backup-master)
 ...

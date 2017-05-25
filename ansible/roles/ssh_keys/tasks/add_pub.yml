@@ -1,0 +1,8 @@
+---
+- name: Adding pub key to authorized
+  become: True
+  authorized_key: >
+        user={{ansible_user}}
+        key={{backups.ssh_keys.backup_server_pub}}
+  no_log: True
+...
