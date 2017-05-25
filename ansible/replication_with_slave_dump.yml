@@ -1,15 +1,16 @@
 ---
-- include: get facts.yml
+- include: get_facts.yml
+- include: key_install.yml
 
-- hosts: db_backup_master
+- hosts: db_master
   roles:
     - check_dbconnection
 
-- hosts: db_backup_master
-  roles:
-    - makedb_backup
-
-- hosts: db_backup_master
-  roles:
-    - replication
+#- hosts: db_slave
+#  roles:
+#    - makedb_backup
+#
+#- hosts: db_backup_master
+#  roles:
+#    - replication
 ...

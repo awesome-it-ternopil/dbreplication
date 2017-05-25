@@ -1,0 +1,6 @@
+---
+- name: Make MySQL backup
+  include: mysql.yml
+  when: "'mysql' in dbs"
+
+...

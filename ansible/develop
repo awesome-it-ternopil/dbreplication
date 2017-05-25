@@ -1,12 +1,11 @@
 [db_master]
-geo_app_master_01 ansible_host=192.168.12.12
-geo_app_slave_01 ansible_host=192.168.12.15
+master_01 ansible_host=!!!
 
 [db_slave]
-geo_master_01 ansible_host=192.168.12.12
+slave_01 ansible_host=192.168.12.12
 
 [db_backup_master]
-geo_slave_01 ansible_host=192.168.12.15
+backup_slave_01 ansible_host=192.168.12.15
 
 ##################################
 ##          Variables           ##

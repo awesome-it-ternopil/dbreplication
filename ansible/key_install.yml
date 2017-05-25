@@ -1,0 +1,16 @@
+---
+- hosts: !!!!!!!!!!
+  vars:
+    keys_actions:
+      - 'pub'
+  roles:
+    - ssh_keys
+
+- hosts: !!!!!!!!!
+  become: True
+  vars:
+    keys_actions:
+      - 'pem'
+  roles:
+    - ssh_keys
+...

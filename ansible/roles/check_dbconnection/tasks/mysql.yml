@@ -10,7 +10,7 @@ local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
 
 - name: Ensure replication user exists on master. (master)
   mysql_user:
-    name: "{{ mysql_replication_user.name }}"
+    name: "{{ mysql_replication_user.name}}"
     host: "{{ mysql_replication_user.host | default('%') }}"
     password: "{{ mysql_replication_user.password }}"
     priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
@@ -22,15 +22,27 @@ local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
   register: slave_on_master
 
 - name: Creating user slave on master (master)
+   become: yes
+    mysql_user: >
+          name={{ mysql.replication_user }}
+          password={{ mysql.password }}
+          priv= "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+          host='%'
+          state=present
   when: slave_on_master. ==
+
+- name: check if DB exists
+   shell: mysql -e 'SHOW DATABASES;' | grep {{ mysql.database }}
+   register: dbstatus
+   failed_when: dbstatus.rc == 2
 
 - name: Checking connection to db from backup-master
    mysql_db:
-      login_user=root
-      login_password=password
+      login_user={{}}
+      login_password={{}}
       login_host=B_address
-      login_port=B_port
-      name=B_database
+#      login_port=22
+      name=B_database # Робити роль для однієї бази чи всіх?
       state=present
     when: dbstatus.rc == 0
 ...

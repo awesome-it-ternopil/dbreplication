@@ -1,0 +1,29 @@
+---
+local_backup_storage: '/tmp'
+server_backup_storage: '/backup'
+tempo_tar: '/tmp/{{ansible_date_time.date}}_{{ansible_date_time.time}}.tar'
+restore_file: '' or backup_name
+replication_user:
+replication_user: slave
+replication_password: slave_pass
+priviledge: ''
+database: "geo_offensive_mapping"
+ssh_user: # Access on server
+pem_file:
+pub_file:
+mysql.user
+mysql.password
+
+
+
+
+env_spec:
+  develop:
+    server_address: "{{ansible_host}}"
+  hive:
+    server_address: "geo-php.hive"
+  aws_stage:
+    server_address: "aws-stage-php.scalhive.com"
+
+server_address: "{{env_spec[region_name]['server_address']}}" #?????????????
+...

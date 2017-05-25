@@ -1,6 +1,6 @@
 ---
+debug backup name
 - name: Restoring from dump (backup-master)
-- name: Restore data
   become: True
   shell: "mysql -u  {{mysql.database}} < {{server_backup_storage}}/{{backup_name}}"
   when: "backup_name[-4:] == '.sql'"
@@ -10,7 +10,6 @@
   shell: "cat {{server_backup_storage}}/{{backup_name}} | gunzip | mysql {{mysql.database}}"
   when: "backup_name[-3:] == '.gz'"
 
-- name: Selecting master (backup-master)
 - name: Configure replication on the slave.
   become: yes
   mysql_replication: >
@@ -33,6 +32,10 @@
     login_password: "{{ mysql.password }}"
   ignore_errors: true
   register: slave
+
+- name:
+  debug:
+   msg: slave
 
 #- name: Checking second behind master (backup-master)
 ...

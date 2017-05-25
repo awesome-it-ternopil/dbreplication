@@ -1,26 +1,6 @@
 ---
 
-- name: Stoping slave (slave)
-  mysql_replication:
-    mode: stopslave
-
-- name: Geting master status (slave)
- become: True
-  mysql_replication: mode=getmaster
-    config_file="{{ mysql.config_file }}"
-  delegate_to: "{{groups['mariadb_master'][0]}}"
-  register: master #need for bin-filename and position
-
-- name: Creating backup directory (slave)
-  become: True
-    file: >
-          path={{server_backup_storage}}
-          state=directory
-          owner={{ansible_user}}
-          group={{ansible_user}}
-          recurse=True
-
-
+# create file or restore file
 - name: Creating file name
    set_fact:
       backup_name: '{{ansible_host}}_mysql_backup_{{ansible_date_time.year}}_{{ansible_date_time.month}}_{{ansible_date_time.day}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}_{{curr_tag}}.sql.gz'
@@ -28,7 +8,29 @@
 - name: Creating DB dump (slave)
   shell: mysqldump -R -u {{mysql.user}} -p'{{mysql.password}}' {{mysql.database}}  | gzip -1 > {{server_backup_storage}}/{{backup_name}}
 
-  tar?
+#  tar?
+
+- name: Stoping slave (slave)
+  become: yes
+  mysql_replication:
+    mode: stopslave
+
+- name: Geting master status (slave)
+ become: True
+  mysql_replication: mode=getmaster
+  delegate_to: "{{groups['mariadb_master'][0]}}"
+  register: master #need for bin-filename and position
+#    config_file="{{ mysql.config_file }}"
+
+# directory or temp?
+#- name: Creating backup directory (slave)
+#  become: True
+#    file: >
+#          path={{server_backup_storage}}
+#          state=directory
+#          owner={{ansible_user}}
+#          group={{ansible_user}}
+#          recurse=True
 
 - name: Starting replication on slave-prime (slave)
    mysql_replication:
@@ -36,11 +38,8 @@
 
 #- name: Check seconds behind master (for control) not prime
 
-- hosts: serverB
-  tasks:
 - name: Copy dump to backup-master (backup-master or slave)
-   - name: Copy Remote-To-Remote (from serverA to serverB)
-     synchronize: src=/copy/from_serverA dest=/copy/to_serverB
-     delegate_to: serverA
-
+  synchronize:
+    src: {{temp_dir}} or backup_dir
+    dest: rsync://{{}}/{{backup_dir}}/{{}}
 ...
