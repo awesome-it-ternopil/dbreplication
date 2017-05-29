@@ -1,8 +1,9 @@
 ---
 debug backup name
+
 - name: Restoring from dump (backup-master)
   become: True
-  shell: "mysql -u  {{mysql.database}} < {{server_backup_storage}}/{{backup_name}}"
+  shell: "mysql -u  {{database}} < {{server_backup_storage}}/{{backup_name}}"
   when: "backup_name[-4:] == '.sql'"
 
 - name: Restore data
@@ -10,13 +11,16 @@ debug backup name
   shell: "cat {{server_backup_storage}}/{{backup_name}} | gunzip | mysql {{mysql.database}}"
   when: "backup_name[-3:] == '.gz'"
 
+if root password = 0
+debug master
+
 - name: Configure replication on the slave.
   become: yes
   mysql_replication: >
         mode=changemaster
         master_host="{{item}}"
-        master_user="{{ mysql.replication_user }}"
-        master_password="{{ mysql.password}}"
+        master_user="{{ replication_user.name }}"
+        master_password="{{ replication_user.password}}"
         master_log_file="{{ master.File }}"
         master_log_pos="{{ master.Position}}"
   with_items: "{{hostvars[groups['mariadb_master'][0]]['ansible_all_ipv4_addresses'][:2]}}"
@@ -28,7 +32,7 @@ debug backup name
 - name: Check slave replication status. (backup-master)
   mysql_replication:
     mode: getslave
-    login_user: "{{ mysql.user }}"
+    login_user: "{{ user }}"
     login_password: "{{ mysql.password }}"
   ignore_errors: true
   register: slave

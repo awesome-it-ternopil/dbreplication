@@ -1,11 +1,11 @@
 [db_master]
-master_01 ansible_host=!!!
+master_01 ansible_host=192.168.12.12
 
 [db_slave]
-slave_01 ansible_host=192.168.12.12
+slave_01 ansible_host=192.168.12.15
 
 [db_backup_master]
-backup_slave_01 ansible_host=192.168.12.15
+backup_slave_01 ansible_host=192.168.12.13
 
 ##################################
 ##          Variables           ##
@@ -23,8 +23,6 @@ ansible_ssh_private_key_file= '~/.vagrant.d/insecure_private_key'
 ##################################
 [region:children]
 db
-
-
      [db:children]
      mariadb
 

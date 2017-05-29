@@ -1,5 +1,5 @@
 ---
-- name: Make MySQL backup
+- name: Make dump restore to MySQL DB
   include: mysql.yml
   when: "'mysql' in dbs"
 

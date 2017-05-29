@@ -1,5 +1,26 @@
 ---
-- name: Make MySQL backup
+#- name: Checking ssh connection to slave from backup-master (backup-master)
+#  command: ssh -q user@downhost exit
+#ssh -q -o "BatchMode=yes" -i /home/sicmapp/.ssh/id_rsa <ID>@<Servername>.<domain> "echo 2>&1" && echo $host SSH_OK || echo $host SSH_NOK
+#local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
+#  register: user1_enabled
+#
+#- debug
+#  when: user1_enabled.stdout.find("success") != -1
+
+#- name: Wait for the server to come back
+#  wait_for:
+#    host: "{{ inventory_hostname }}"
+#    port: 22
+#    state: started
+#  sudo: false
+#  delegate_to: "{{ item }}"
+#  with_items:
+#    - "{{ ssh_delegate }}"
+
+
+
+- name: If Db i mysql
   include: mysql.yml
   when: "'mysql' in dbs"
 

@@ -1,19 +1,12 @@
 ---
-- name: Checking ssh connection to slave from backup-master (backup-master)
-  command: ssh -q user@downhost exit
-ssh -q -o "BatchMode=yes" -i /home/sicmapp/.ssh/id_rsa <ID>@<Servername>.<domain> "echo 2>&1" && echo $host SSH_OK || echo $host SSH_NOK
-local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
-  register: user1_enabled
-
-- debug
-  when: user1_enabled.stdout.find("success") != -1
-
 - name: Ensure replication user exists on master. (master)
-  mysql_user:
-    name: "{{ mysql_replication_user.name}}"
-    host: "{{ mysql_replication_user.host | default('%') }}"
-    password: "{{ mysql_replication_user.password }}"
-    priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+  mysql_user: >
+    login_user: "{{ master_db.db_user }}"
+    login_password: "{{ master_db.db_password }}"
+    name: "{{ replication_user.name }}"
+    host: "{{ replication_user.host | default('%') }}"
+    password: "{{ replication_user.password }}"
+    priv: "{{ replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
     state: present
 #  when: >
 #    (mysql_replication_role == 'master')
@@ -21,28 +14,35 @@ local_action: shell ssh user1@{{ inventory_hostname }} "echo success"
 #    and (mysql_replication_master != '')
   register: slave_on_master
 
+- name: Show slave_on_master output
+  debug:
+    msg={{slave_on_master}}
+
 - name: Creating user slave on master (master)
-   become: yes
-    mysql_user: >
-          name={{ mysql.replication_user }}
-          password={{ mysql.password }}
-          priv= "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
-          host='%'
-          state=present
-  when: slave_on_master. ==
+  become: yes
+  mysql_user: >
+        name={{ replication_user.name }}
+        password={{ replication_user.name }}
+        priv= "{{ replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+        host='%'
+        state=present
+  when: slave_on_master. == 0
 
 - name: check if DB exists
-   shell: mysql -e 'SHOW DATABASES;' | grep {{ mysql.database }}
-   register: dbstatus
-   failed_when: dbstatus.rc == 2
+  shell: mysql -e 'SHOW DATABASES;' | grep {{ database }}
+  register: dbstatus
+  failed_when: dbstatus.rc == 2
 
-- name: Checking connection to db from backup-master
-   mysql_db:
-      login_user={{}}
-      login_password={{}}
-      login_host=B_address
+- debug: msg={{ hostvars[groups['db_master'][0]]['ansible_all_ipv4_addresses'][:2] }}
+
+#- name: Checking connection to db from backup-master with slave user
+#  mysql_db:
+#    login_user={{ replication_user.name }}
+#    login_password={{ replication_user.password }}
+#    login_host={{ hostvars[groups['db_master'][0]]['ansible_all_ipv4_addresses'][:2] }}
+#    state=present
+#  when: dbstatus.rc == 0
+#  delegate_to: {{hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]}}
 #      login_port=22
-      name=B_database # Робити роль для однієї бази чи всіх?
-      state=present
-    when: dbstatus.rc == 0
+#      name=B_database # Робити роль для однієї бази чи всіх?
 ...
