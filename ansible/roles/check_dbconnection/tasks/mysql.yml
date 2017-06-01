@@ -1,48 +1,42 @@
 ---
+
+#Is mysql running
+
 - name: Ensure replication user exists on master. (master)
-  mysql_user: >
+  mysql_user:
     login_user: "{{ master_db.db_user }}"
     login_password: "{{ master_db.db_password }}"
-    name: "{{ replication_user.name }}"
-    host: "{{ replication_user.host | default('%') }}"
+    name: "{{ replication_user.name | default('slave')}}"
     password: "{{ replication_user.password }}"
     priv: "{{ replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+    host: "{{ replication_user.host | default('%')}}"
     state: present
+#  register: slave_on_master
 #  when: >
 #    (mysql_replication_role == 'master')
 #    and mysql_replication_user
 #    and (mysql_replication_master != '')
-  register: slave_on_master
 
-- name: Show slave_on_master output
-  debug:
-    msg={{slave_on_master}}
+#- name: check if DB exists
+#  shell: mysql -u"{{ master_db.db_user }}" -p"{{ master_db.db_password }}" -e 'SHOW DATABASES;'  | grep {{ database }}
+#  register: dbstatus
+#  failed_when: dbstatus.rc == 0
+#
+- debug:
+    var={{groups['db_backup_master'][0]}}
 
-- name: Creating user slave on master (master)
-  become: yes
-  mysql_user: >
-        name={{ replication_user.name }}
-        password={{ replication_user.name }}
-        priv= "{{ replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
-        host='%'
-        state=present
-  when: slave_on_master. == 0
-
-- name: check if DB exists
-  shell: mysql -e 'SHOW DATABASES;' | grep {{ database }}
-  register: dbstatus
-  failed_when: dbstatus.rc == 2
-
-- debug: msg={{ hostvars[groups['db_master'][0]]['ansible_all_ipv4_addresses'][:2] }}
-
-#- name: Checking connection to db from backup-master with slave user
-#  mysql_db:
-#    login_user={{ replication_user.name }}
-#    login_password={{ replication_user.password }}
-#    login_host={{ hostvars[groups['db_master'][0]]['ansible_all_ipv4_addresses'][:2] }}
-#    state=present
+- name: Checking connection to db from backup-master with slave user
+  mysql_db:
+    name: "{{database}}"
+    login_user: "{{ replication_user.name }}"
+    login_password: "{{ replication_user.password }}"
+    login_host: ansible_default_ipv4.address
+    state: present
 #  when: dbstatus.rc == 0
+  delegate_to: "{{groups['db_backup_master'][0]}}"
 #  delegate_to: {{hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]}}
 #      login_port=22
 #      name=B_database # Робити роль для однієї бази чи всіх?
+
+# iptables -I INPUT 40 -p tcp --dport 3306 -s 13.58.41.86 -j ACCEPT
 ...

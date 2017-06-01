@@ -7,7 +7,7 @@
   include: add_pub.yml
   when: "'pub' in keys_actions"
 
-- name: Using pem method
-  include: add_pem.yml
-  when: "'pem' in keys_actions"
+#- name: Using pem method
+#  include: add_pem.yml
+#  when: "'pem' in keys_actions"
 ...

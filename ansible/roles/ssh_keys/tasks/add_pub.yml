@@ -2,7 +2,8 @@
 - name: Adding pub key to authorized
   become: True
   authorized_key: >
-        user={{ansible_user}}
+        user=vagrant
         key={{backups.ssh_keys.backup_server_pub}}
-  no_log: True
+#  no_log: True
+#        key="{{ lookup('file', '~/.ssh/wt-t/openstack/devops_key.pub') }}"
 ...

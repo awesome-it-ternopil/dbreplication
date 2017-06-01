@@ -1,44 +1,70 @@
 ---
 
-# create filename or variable restore file
 - name: Creating file name
-   set_fact:
-      backup_name: '{{ansible_host}}_mysql_backup_{{ansible_date_time.year}}_{{ansible_date_time.month}}_{{ansible_date_time.day}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}_{{curr_tag}}.sql.gz'
+  set_fact:
+        backup_name: '{{ansible_host}}_mysql_backup_{{ansible_date_time.year}}_{{ansible_date_time.month}}_{{ansible_date_time.day}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}.sql.gz'
 
-- name: Creating DB dump (slave)
-  shell: mysqldump -R -u {{mysql.user}} -p'{{mysql.password}}' {{mysql.database}}  | gzip -1 > {{server_backup_storage}}/{{backup_name}}
 
 
 - name: Stoping slave (slave)
-  become: yes
   mysql_replication:
-    mode: stopslave
+        login_user: "{{ master_db.db_user }}"
+        login_password: "{{ master_db.db_password }}"
+        mode: stopslave
+
 
 - name: Geting master status (slave)
- become: True
-  mysql_replication: mode=getmaster
-  delegate_to: "{{groups['mariadb_master'][0]}}"
+  mysql_replication:
+        mode: getslave
+        login_user: "{{ master_db.db_user }}"
+        login_password: "{{ master_db.db_password }}"
   register: master #need for bin-filename and position
-#    config_file="{{ mysql.config_file }}"
+#        mode: getmaster
 
-# directory or temp?
-#- name: Creating backup directory (slave)
-#  become: True
-#    file: >
-#          path={{server_backup_storage}}
-#          state=directory
-#          owner={{ansible_user}}
-#          group={{ansible_user}}
-#          recurse=True
+- name:
+  debug:
+    msg={{ master }}
+
+- name: Creating DB dump (slave)
+  shell: mysqldump -R -u {{master_db.db_user}} -p'{{master_db.db_password}}' {{database}}  | gzip -1 > {{local_backup_storage}}/{{backup_name}}
+
+
+#  shell: mysqldump -R -u {{master_db.db_user}} -p'{{master_db.db_password}}' {{database}}  | gzip -1 > {{local_backup_storage}}/{{backup_name}}
+#-  name: create fake 'nologin' shell
+#   file: path="{{local_backup_storage}}/{{backup_name}}" state=touch
 
 - name: Starting replication on slave-prime (slave)
-   mysql_replication:
-      mode: startslave
+  mysql_replication:
+        mode: startslave
+        login_user: "{{ master_db.db_user }}"
+        login_password: "{{ master_db.db_password }}"
+
+
+
+
+
 
 #- name: Check seconds behind master (for control) not prime
+#- debug: msg="{%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != 10.0.2.15%}{{ip}}{%endif%}{%endfor%}}"
+#- name: Display all variables/facts known for a host
+#  debug:
+#    msg={%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != '10.0.2.15'%}"{{ip}}"{%endif%}{%endfor%}
 
-- name: Copy dump to backup-master (backup-master or slave)
-  synchronize:
-    src: {{temp_dir}} or backup_dir
-    dest: rsync://192.168.12.13/{{backup_dir}}/{{}}
+#- name: Copy dump to backup-master (backup-master or slave)
+#  copy:
+#        src: "{{ local_backup_storage }}/{{ backup_name }}"
+#        dst: {%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != '10.0.2.15'%}{{ip}}{%endif%}{%endfor%}:/{{ local_backup_storage }}/
+
+#- debug: msg={{ backup_name }}
+#
+#- name: fetch file
+#  command: scp /tmp/temp 192.168.12.13:/tmp/
+
+
+#- name: Copy dump to backup-master (backup-master or slave)
+#  synchronize:
+#        mode: push
+#        src: "{{ local_backup_storage }}/{{ backup_name }}"
+#        dest: rsync://{%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != '10.0.2.15'%}{{ip}}{%endif%}{%endfor%}/{{ local_backup_storage }}/
+#        dest: rsync://{%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != 10.0.2.15%}{{ip}}{%endif%}{%endfor%}}/{{ local_backup_storage }}/{{ backup_name }}
 ...

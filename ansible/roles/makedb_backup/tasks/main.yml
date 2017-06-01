@@ -1,12 +1,12 @@
 ---
-- name: Creating folder for backups
-  become: True
-  file: >
-        path={{server_backup_storage}}
-        state=directory
-        owner={{ansible_user}}
-        group={{ansible_user}}
-        recurse=True
+#- name: Creating folder for backups
+#  become: True
+#  file: >
+#        path={{server_backup_storage}}
+#        state=directory
+#        owner={{ansible_user}}
+#        group={{ansible_user}}
+#        recurse=True
 
 - name: Make MySQL backup
   include: mysql.yml

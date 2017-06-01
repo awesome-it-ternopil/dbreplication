@@ -1,34 +1,46 @@
-[geofence_php]
-geo_app_master_01 ansible_host=13.58.41.86
-geo_app_slave_01 ansible_host=13.58.134.98
+[db_master]
+master_01 ansible_host=216.5.169.4
 
-[mariadb_master]
-geo_master_01 ansible_host=13.58.41.86
+[db_slave]
+slave_01 ansible_host=216.5.169.5
 
-[mariadb_slave]
-geo_slave_01 ansible_host=13.58.134.98
+[db_backup_master]
+backup_slave_01 ansible_host=13.58.41.86
 
 ##################################
 ##          Variables           ##
 ##################################
 
-[region:vars]
-region_name=aws_stage
+[db_master:vars]
+#region_name=aws_stage
+ansible_user=root
+ansible_ssh_user=root
+ansible_ssh_private_key_file= '~/.ssh/wt-t/geofence/geo_india.pem'
+
+[db_slave:vars]
+#region_name=aws_stage
+ansible_user=root
+ansible_ssh_user=root
+ansible_ssh_private_key_file= '~/.ssh/wt-t/geofence/geo_india.pem'
+
+[db_backup_master:vars]
+#region_name=aws_stage
 ansible_user=ec2-user
 ansible_ssh_user=ec2-user
 ansible_ssh_private_key_file= '~/.ssh/wt-t/AWS/stage/scalhive_devops'
 
+[mariadb:vars]
+dbs='mysql'
 
 ##################################
 ##          childhood           ##
 ##################################
 [region:children]
 db
-geofence_php
-
      [db:children]
      mariadb
 
         [mariadb:children]
-        mariadb_master
-        mariadb_slave
+        db_master
+        db_slave
+        db_backup_master

@@ -1,16 +1,16 @@
 ---
-- hosts: slave_db_01
+- hosts: all
   vars:
     keys_actions:
       - 'pub'
   roles:
     - ssh_keys
 
-- hosts: db_backup_master
-  become: True
-  vars:
-    keys_actions:
-      - 'pem'
-  roles:
-    - ssh_keys
+#- hosts: db_backup_master
+#  become: True
+#  vars:
+#    keys_actions:
+#      - 'pem'
+#  roles:
+#    - ssh_keys
 ...

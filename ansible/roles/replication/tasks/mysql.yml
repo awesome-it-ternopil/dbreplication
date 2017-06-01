@@ -1,45 +1,70 @@
 ---
-debug backup name
+- name: forvarding ssh key
+  command: ssh-add {{hostvars[groups['db_slave'][0]]['ansible_ssh_private_key_file']}}
+  delegate_to: "127.0.0.1"
+
+- name: Copy dump to backup-master (backup-master or slave)
+  command: scp -o StrictHostKeyChecking=no {{hostvars[groups['db_slave'][0]]['ansible_ssh_user']}}@{{hostvars[groups['db_slave'][0]]['ansible_host']}}:{{ local_backup_storage }}/{{ hostvars[groups['db_slave'][0]]['backup_name'] }} {{ local_backup_storage }}/{{ hostvars[groups['db_slave'][0]]['backup_name'] }}
+
+#  command: rsync {{hostvars[groups['db_slave'][0]]['ansible_host']}}:{{ local_backup_storage }}/{{ hostvars[groups['db_slave'][0]]['backup_name'] }} {{ local_backup_storage }}/{{ hostvars[groups['db_slave'][0]]['backup_name'] }}
+#  synchronize:
+#        mode: pull
+#        src: "192.168.12.15:/{{local_backup_storage}}/{{ hostvars['slave_01']['backup_name'] }} "
+#        dest: /tmp/tempo
+#        dest: rsync://{%for ip in hostvars[groups['db_backup_master'][0]]['ansible_all_ipv4_addresses'][:2]%}{%if ip != 10.0.2.15%}{{ip}}{%endif%}{%endfor%}}/{{ local_backup_storage }}/{{ backup_name }}
+
+
+- name: Backup name
+  debug:
+        msg="{{ hostvars[groups['db_slave'][0]]['backup_name'] }}"
+
+- name: Stoping slave
+  mysql_replication:
+        login_user: "{{ backup_master_db.db_user }}"
+        login_password: "{{ backup_master_db.db_password }}"
+        mode: stopslave
 
 - name: Restoring from dump (backup-master)
   become: True
-  shell: "mysql -u  {{database}} < {{server_backup_storage}}/{{backup_name}}"
-  when: "backup_name[-4:] == '.sql'"
+  shell: "mysql -u {{ backup_master_db.db_user }}  -p'{{ backup_master_db.db_password }}' {{ database }} < {{ local_backup_storage }}/{{ hostvars[groups['db_slave'][0]]['backup_name'] }}"
+  when: "hostvars.slave_01.backup_name[-4:] == '.sql'"
 
 - name: Restore data
   become: True
-  shell: "cat {{server_backup_storage}}/{{backup_name}} | gunzip | mysql {{mysql.database}}"
-  when: "backup_name[-3:] == '.gz'"
+  shell: "cat {{ local_backup_storage }}/{{ hostvars['slave_01']['backup_name'] }} | gunzip | mysql -u{{backup_master_db.db_user}} {{database}}"
+  when: "hostvars.slave_01.backup_name[-3:] == '.gz'"
 
-if root password = 0
-debug master
+#if root password = 0
+#debug master
 
 - name: Configure replication on the slave.
   become: yes
   mysql_replication: >
         mode=changemaster
-        master_host="{{item}}"
+        master_host={{hostvars[groups['db_master'][0]]['ansible_host']}}
         master_user="{{ replication_user.name }}"
-        master_password="{{ replication_user.password}}"
-        master_log_file="{{ master.File }}"
-        master_log_pos="{{ master.Position}}"
-  with_items: "{{hostvars[groups['mariadb_master'][0]]['ansible_all_ipv4_addresses'][:2]}}"
+        master_password="{{ replication_user.password }}"
+        master_log_file="{{ hostvars.slave_01.master.Master_Log_File }}"
+        master_log_pos="{{ hostvars.slave_01.master.Read_Master_Log_Pos}}"
 
 - name: Starting replication on backup-master (backup-master)
   mysql_replication:
+        login_user: "{{ backup_master_db.db_user }}"
+        login_password: "{{ backup_master_db.db_password }}"
         mode: startslave
 
 - name: Check slave replication status. (backup-master)
   mysql_replication:
-    mode: getslave
-    login_user: "{{ user }}"
-    login_password: "{{ mysql.password }}"
-  ignore_errors: true
+        mode: getslave
+        login_user: "{{ backup_master_db.db_user }}"
+        login_password: "{{ backup_master_db.db_password }}"
   register: slave
+#  ignore_errors: true
 
-- name:
+- name: Slave status
   debug:
-   msg: slave
+        msg: "{{ slave }}"
+
 
 #- name: Checking second behind master (backup-master)
 ...

@@ -3,23 +3,26 @@ local_backup_storage: '/tmp'
 server_backup_storage: '/backup'
 ssh_user: # Access on server
 tempo_tar: '/tmp/{{ansible_date_time.date}}_{{ansible_date_time.time}}.tar'
-restore_file: '' or backup_name
+#restore_file: '' or backup_name
 master_db:
   db_user: 'root'
-  db_password: ''
+  db_password: 'swineflu2009'
 slave_db:
+  db_user: 'root'
+  db_password: 'swineflu2009'
+backup_master_db:
   db_user: 'root'
   db_password: ''
 database: "geo_offensive_mapping"
 replication_user:
-  name: slave
-  password: slave_pass
-  host: ''
-  priv: ''
+  name: 'slave'
+  password: 'swineflu2009'
+  host: '%'
+#  priv: ''
 
 
-pem_file:
-pub_file:
+#pem_file:
+#pub_file:
 env_spec:
   develop:
     server_address: "{{ansible_host}}"
